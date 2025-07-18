@@ -1,26 +1,58 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import { ExtensionContext, window } from 'vscode';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+import { registerLogger, traceError, traceInfo } from './common/logging';
+import { setPersistentState } from './common/persistentState';
+import { PixiEnvManager } from './pixi/envManager';
+import { PixiPackageManager } from './pixi/projectManager';
+import { getPixi, runPixi } from './pixi/utils';
+import { getEnvExtApi } from './pythonEnvsApi';
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "pixi-code" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('pixi-code.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from pixi-code!');
-	});
-
-	context.subscriptions.push(disposable);
+export interface IDisposable {
+    dispose(): void | undefined | Promise<void>;
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+export async function activate(context: ExtensionContext) {
+    const api = await getEnvExtApi();
+
+    const log = window.createOutputChannel('Pixi Environment Manager', {
+        log: true,
+    });
+    context.subscriptions.push(log, registerLogger(log));
+
+    // Validate Pixi installation
+    const stdout = await runPixi(['--version']);
+    const versionMatch = stdout.trim().match(/^pixi (\d+\.\d+\.\d+)/);
+    if (!versionMatch) {
+        const errorMsg = `Found invalid Pixi binary at ${getPixi()}.`;
+        traceError(errorMsg);
+        throw new Error(errorMsg);
+    }
+
+    // Setup the persistent state for the extension.
+    setPersistentState(context);
+
+    const manager = new PixiEnvManager(api, log);
+    context.subscriptions.push(api.registerEnvironmentManager(manager));
+
+    const packageManager = new PixiPackageManager(api, log);
+    context.subscriptions.push(api.registerPackageManager(packageManager));
+}
+
+export async function disposeAll(disposables: IDisposable[]): Promise<void> {
+    await Promise.all(
+        disposables.map(async (d) => {
+            try {
+                return Promise.resolve(d.dispose());
+            } catch {
+                // do nothing
+            }
+            return Promise.resolve();
+        }),
+    );
+}
+
+export async function deactivate(context: ExtensionContext) {
+    await disposeAll(context.subscriptions);
+    context.subscriptions.length = 0; // Clear subscriptions to prevent memory leaks
+    traceInfo('Pixi Environment Manager extension deactivated.');
+}
