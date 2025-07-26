@@ -3,7 +3,7 @@
     "displayName": "pixi-code",
     "description": "Pixi VSCode integration",
     "license": "MIT",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "engines": {
         "vscode": "^1.102.0"
     },

@@ -1,48 +1,69 @@
-# pixi-code README
+# Pixi VSCode Extension
 
-This is the README for your extension "pixi-code". After writing up a brief description, we recommend including the following sections.
+VS Code extension that integrates [Pixi](https://pixi.sh) environments with the [Python Environments
+extension](https://github.com/microsoft/vscode-python-environments).
+
+## Overview
+
+This extension implements the `EnvironmentManager` and `PackageManager` interfaces for the [Python Environments
+extension](https://github.com/microsoft/vscode-python-environments), allowing Pixi environments to appear alongside
+conda, venv, and other Python environments in VS Code.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- Automatic discovery of Python environments created with Pixi
+- Automatic interpreter selection when running and debugging Python code
+- Support for Pixi features (dev, test, lint, etc.) as separate selectable environments
+- Terminal activation
+- Persistent environment selection per project
+- Package discovery
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- Pixi installed on your system
+- Python Environments extension (`ms-python.vscode-python-envs`)
+
+## Installation
+
+1. Install Pixi on your system
+2. Install this extension from the VS Code Marketplace
+3. Open a project with a `pixi.toml` or `pyproject.toml` file
+
+The extension will automatically discover Pixi environments and register them with the Python Environments system.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+- `pixi-code.pixiExecutable`: Path to the Pixi executable (default: pixi). If empty, autodiscovery will be used.
 
-For example:
+## Limitations
 
-This extension contributes the following settings:
+- **Environment creation and deletion**
+- **Adding, updating and removing packages**
 
-- `myExtension.enable`: Enable/disable this extension.
-- `myExtension.thing`: Set to `blah` to do something.
+These operations are intentionally not supported as Pixi's declarative manifest approach works best through direct CLI
+interaction or editing of the `pixi.toml` or `pyproject.toml` files directly.
 
-## Known Issues
+## Troubleshooting
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+### Logs
 
-## Release Notes
+Check the "Pixi Environment Manager" output channel:
 
-Users appreciate release notes as you update your extension.
+1. View → Output
+2. Select "Pixi Environment Manager" from dropdown
 
-### 1.0.0
+### Common Issues
 
-Initial release of ...
+**Pixi executable not found**
 
-### 1.0.1
+- Ensure Pixi is installed and in PATH
+- Set `pixi-code.pixiExecutable` setting if needed
 
-Fixed issue #.
+**No environments discovered**
 
-### 1.1.0
+- Verify `pixi.toml` or `pyproject.toml` exists in project root
+- Run `pixi install` to ensure environments are set up
 
-Added features X, Y, and Z.
+## License
+
+MIT
