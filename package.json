@@ -1,14 +1,30 @@
 {
     "name": "pixi-code",
-    "displayName": "pixi-code",
-    "description": "Pixi VSCode integration",
+    "displayName": "Pixi Code",
+    "description": "Pixi support for the Python Environments extension",
+    "icon": "assets/icon.png",
     "license": "MIT",
     "version": "0.1.0",
+    "homepage": "https://github.com/renan-r-santos/pixi-code",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/renan-r-santos/pixi-code"
+    },
+    "bugs": {
+        "url": "https://github.com/renan-r-santos/pixi-code/issues"
+    },
+    "keywords": [
+        "pixi",
+        "vscode",
+        "python",
+        "conda"
+    ],
     "engines": {
         "vscode": "^1.102.0"
     },
     "categories": [
-        "Other"
+        "Data Science",
+        "Programming Languages"
     ],
     "activationEvents": [
         "onLanguage:python",
@@ -52,8 +68,7 @@
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
         "lint": "eslint src",
         "format": "prettier --write .",
-        "format:check": "prettier --check .",
-        "test": "vscode-test"
+        "format:check": "prettier --check ."
     },
     "devDependencies": {
         "@types/node": "20.x",

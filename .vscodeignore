@@ -1,3 +1,4 @@
+**/.github/
 .vscode/**
 .vscode-test/**
 out/**
@@ -12,3 +13,4 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+.claude
