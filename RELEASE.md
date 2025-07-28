@@ -2,7 +2,7 @@
 
 ## Steps to Release
 
-1. **Create a PR updating package.json version**
+1. **Create a PR updating package.json version and package-lock.json**
 
 2. **Merge PR**
 
