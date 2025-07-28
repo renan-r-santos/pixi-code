@@ -4,7 +4,7 @@
     "description": "Pixi support for the Python Environments extension",
     "icon": "assets/icon.png",
     "license": "MIT",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "homepage": "https://github.com/renan-r-santos/pixi-code",
     "repository": {
         "type": "git",
