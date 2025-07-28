@@ -124,7 +124,11 @@ export class PixiEnvManager implements EnvironmentManager {
         await this.initialize();
 
         if (scope === 'all') {
-            return Array.from(this.projectToEnvs.values()).flat();
+            return [
+                ...new Map(
+                    Array.from(this.projectToEnvs.values()).flatMap((envs) => envs.map((env) => [env.envId.id, env])),
+                ).values(),
+            ];
         }
 
         if (scope instanceof Uri) {
