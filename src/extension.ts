@@ -1,6 +1,6 @@
 import { ExtensionContext, window } from 'vscode';
 
-import { registerLogger, traceError, traceInfo } from './common/logging';
+import { registerLogger, traceInfo } from './common/logging';
 import { setPersistentState } from './common/persistentState';
 import { PixiEnvManager } from './pixi/envManager';
 import { PixiPackageManager } from './pixi/projectManager';
@@ -24,7 +24,7 @@ export async function activate(context: ExtensionContext) {
     const versionMatch = stdout.trim().match(/^pixi (\d+\.\d+\.\d+)/);
     if (!versionMatch) {
         const errorMsg = `Found invalid Pixi binary at ${getPixi()}.`;
-        traceError(errorMsg);
+        window.showErrorMessage(errorMsg);
         throw new Error(errorMsg);
     }
 

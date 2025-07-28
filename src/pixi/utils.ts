@@ -1,5 +1,5 @@
 import * as ch from 'child_process';
-import { CancellationError, CancellationToken, Uri, workspace } from 'vscode';
+import { CancellationError, CancellationToken, Uri, window, workspace } from 'vscode';
 import which from 'which';
 
 import { Package } from '../api';
@@ -29,9 +29,10 @@ export async function getPixi(): Promise<string> {
     if (!value || typeof value !== 'string') {
         const pixiPath = await findPixi();
         if (!pixiPath) {
-            throw new Error(
-                'Pixi executable not found. Please install Pixi or set "pixi-code.pixiExecutable" in your settings.',
-            );
+            const errorMsg =
+                'Pixi executable not found. Please install Pixi or set "pixi-code.pixiExecutable" in your settings.';
+            window.showErrorMessage(errorMsg);
+            throw new Error(errorMsg);
         }
         return pixiPath;
     }
