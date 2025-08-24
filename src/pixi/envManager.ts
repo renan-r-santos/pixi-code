@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { EventEmitter, LogOutputChannel, MarkdownString, ProgressLocation, ThemeIcon, Uri, window } from 'vscode';
 
 import {
@@ -12,11 +13,13 @@ import {
     IconPath,
     PythonEnvironment,
     PythonEnvironmentApi,
+    PythonProject,
     QuickCreateConfig,
     RefreshEnvironmentsScope,
     ResolveEnvironmentContext,
     SetEnvironmentScope,
 } from '../api';
+import { getDefaultInterpreterPath } from '../common/defaultInterpreter';
 import { createDeferred, Deferred } from '../common/deferred';
 import { traceVerbose } from '../common/logging';
 import { EXTENSION_ID } from '../common/utils';
@@ -140,7 +143,7 @@ export class PixiEnvManager implements EnvironmentManager {
             return this.projectToEnvs.get(project.uri.fsPath) || [];
         }
 
-        // Skip 'global'. Pixi does not have the notion of global or base environments like Conda
+        // Skip 'global'. Pixi does not have global or base environments like Conda
         return [];
     }
 
@@ -227,6 +230,9 @@ export class PixiEnvManager implements EnvironmentManager {
                     const projectPath = project.uri.fsPath;
 
                     const newEnvs = await refreshPixi(projectPath);
+                    const defaultEnvs = await this.getDefaultPathEnvironments(project);
+                    newEnvs.push(...defaultEnvs);
+
                     const oldEnvs = oldProjectToEnvs.get(projectPath) || [];
 
                     const oldEnvIds = new Set(oldEnvs.map((env) => env.envId.id));
@@ -264,9 +270,12 @@ export class PixiEnvManager implements EnvironmentManager {
                     const projectPath = project.uri.fsPath;
 
                     const envId = await getProjectEnvId(projectPath);
-                    const env = envId ? envIdToEnv.get(envId) : undefined;
+                    let env = envId ? envIdToEnv.get(envId) : undefined;
+
                     if (env) {
                         this.activeEnv.set(projectPath, env);
+                    } else {
+                        env = await this.trySetActiveFromDefault(project, projectPath);
                     }
 
                     this.triggerDidChangeEnvironment(project.uri, oldActiveEnv.get(projectPath), env);
@@ -285,6 +294,8 @@ export class PixiEnvManager implements EnvironmentManager {
 
         const oldEnvs = this.projectToEnvs.get(projectPath) || [];
         const newEnvs = await refreshPixi(projectPath);
+        const defaultEnvs = await this.getDefaultPathEnvironments(project);
+        newEnvs.push(...defaultEnvs);
 
         const oldEnvIds = new Set(oldEnvs.map((env) => env.envId.id));
         const newEnvIds = new Set(newEnvs.map((env) => env.envId.id));
@@ -309,11 +320,51 @@ export class PixiEnvManager implements EnvironmentManager {
         );
 
         const envId = await getProjectEnvId(projectPath);
-        const env = envId ? envIdToEnv.get(envId) : undefined;
+        let env = envId ? envIdToEnv.get(envId) : undefined;
         this.triggerDidChangeEnvironment(project.uri, this.activeEnv.get(projectPath), env);
+
         if (env) {
             this.activeEnv.set(projectPath, env);
+        } else {
+            env = await this.trySetActiveFromDefault(project, projectPath);
         }
+    }
+
+    private async getDefaultPathEnvironments(project: PythonProject): Promise<PixiEnvironment[]> {
+        const defaultInterpreterPath = getDefaultInterpreterPath(project);
+
+        if (!defaultInterpreterPath) {
+            return [];
+        }
+
+        const binPath = path.dirname(defaultInterpreterPath);
+        traceVerbose(`Also refreshing Pixi environments using defaultInterpreterPath: ${binPath}`);
+        return await refreshPixi(binPath);
+    }
+
+    private async trySetActiveFromDefault(
+        project: PythonProject,
+        projectPath: string,
+    ): Promise<PixiEnvironment | undefined> {
+        const defaultInterpreterPath = getDefaultInterpreterPath(project);
+
+        if (defaultInterpreterPath) {
+            const projectEnvs = this.projectToEnvs.get(projectPath) || [];
+            const matchingEnv = projectEnvs.find((env) =>
+                defaultInterpreterPath.startsWith(env.environmentPath.fsPath),
+            );
+
+            if (matchingEnv) {
+                traceVerbose(
+                    `Setting active environment for project ${projectPath} based on default interpreter path ${defaultInterpreterPath}`,
+                );
+                this.activeEnv.set(projectPath, matchingEnv);
+                await setProjectEnvId(projectPath, matchingEnv.envId.id);
+                return matchingEnv;
+            }
+        }
+
+        return undefined;
     }
 
     private triggerDidChangeEnvironment(

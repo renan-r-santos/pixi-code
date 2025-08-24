@@ -6,7 +6,7 @@ import { Package } from '../api';
 import { createDeferred } from '../common/deferred';
 import { quoteArgs } from '../common/execUtils';
 import { findPythonExecutable } from '../common/findPython';
-import { traceError, traceInfo } from '../common/logging';
+import { traceError, traceInfo, traceVerbose } from '../common/logging';
 import { getWorkspacePersistentState } from '../common/persistentState';
 import { EXTENSION_ID, untildify } from '../common/utils';
 import { PixiEnvironment, PixiInfo, PixiPackage } from './types';
@@ -92,6 +92,12 @@ export async function refreshPixi(project_path: string): Promise<PixiEnvironment
 
         const stdout = await runPixi(['info', '--json'], { cwd: project_path });
         const pixiInfo: PixiInfo = JSON.parse(stdout);
+
+        if (!pixiInfo.project_info) {
+            traceVerbose(`No project info found for Pixi project at ${project_path}`);
+            return [];
+        }
+
         const projectName = pixiInfo.project_info.name;
         const manifestPath = pixiInfo.project_info.manifest_path;
 

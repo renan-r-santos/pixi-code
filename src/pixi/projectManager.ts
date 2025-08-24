@@ -66,6 +66,11 @@ export class PixiPackageManager implements PackageManager, Disposable {
                 title: 'Refreshing Pixi packages',
             },
             async () => {
+                if (!environment.pixiInfo.project_info) {
+                    traceVerbose('No project info found in pixiInfo; skipping package refresh.');
+                    return;
+                }
+
                 const manifest_path = environment.pixiInfo.project_info.manifest_path;
                 const project_path = path.dirname(manifest_path);
 
