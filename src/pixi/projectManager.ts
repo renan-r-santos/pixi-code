@@ -75,7 +75,7 @@ export class PixiPackageManager implements PackageManager, Disposable {
                 const project_path = path.dirname(manifest_path);
 
                 const stdout = await runPixi(
-                    ['list', '--no-lockfile-update', '--json', '--environment', environment.name],
+                    ['list', '--no-install', '--frozen', '--json', '--environment', environment.name],
                     {
                         cwd: project_path,
                     },

@@ -102,9 +102,12 @@ export async function refreshPixi(project_path: string): Promise<PixiEnvironment
         const manifestPath = pixiInfo.project_info.manifest_path;
 
         for (const pixiEnv of pixiInfo.environments_info) {
-            const stdout = await runPixi(['list', '--no-lockfile-update', '--json', '--environment', pixiEnv.name], {
-                cwd: project_path,
-            });
+            const stdout = await runPixi(
+                ['list', '--no-install', '--frozen', '--json', '--environment', pixiEnv.name],
+                {
+                    cwd: project_path,
+                },
+            );
             const pixiPackages: PixiPackage[] = JSON.parse(stdout);
             const pythonPackage = pixiPackages.find((pkg) => pkg.name === 'python');
 
