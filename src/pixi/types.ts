@@ -1,7 +1,7 @@
 import { Package, PythonEnvironment } from '../api';
 
 export interface PixiInfo {
-    project_info: {
+    project_info?: {
         name: string;
         manifest_path: string;
     };
