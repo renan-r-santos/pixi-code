@@ -1,4 +1,5 @@
 import * as ch from 'child_process';
+import * as fs from 'fs';
 import { CancellationError, CancellationToken, Uri, window, workspace } from 'vscode';
 import which from 'which';
 
@@ -87,6 +88,11 @@ export async function runPixi(args: string[], options?: ch.SpawnOptions, token?:
 
 export async function refreshPixi(project_path: string): Promise<PixiEnvironment[]> {
     try {
+        if (!fs.existsSync(project_path)) {
+            traceVerbose(`Project path does not exist: ${project_path}`);
+            return [];
+        }
+
         const pixi = await getPixi();
         const environments: PixiEnvironment[] = [];
 
