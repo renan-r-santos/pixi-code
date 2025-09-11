@@ -2,8 +2,6 @@ import * as path from 'path';
 import { EventEmitter, LogOutputChannel, MarkdownString, ProgressLocation, ThemeIcon, Uri, window } from 'vscode';
 
 import {
-    CreateEnvironmentOptions,
-    CreateEnvironmentScope,
     DidChangeEnvironmentEventArgs,
     DidChangeEnvironmentsEventArgs,
     EnvironmentChangeKind,
@@ -14,7 +12,6 @@ import {
     PythonEnvironment,
     PythonEnvironmentApi,
     PythonProject,
-    QuickCreateConfig,
     RefreshEnvironmentsScope,
     ResolveEnvironmentContext,
     SetEnvironmentScope,
@@ -82,33 +79,6 @@ export class PixiEnvManager implements EnvironmentManager {
         } finally {
             this._initialized.resolve();
         }
-    }
-
-    quickCreateConfig(): QuickCreateConfig | undefined {
-        traceVerbose('Called quickCreateConfig');
-
-        window.showErrorMessage('The Pixi extension does not support quick create. Please use the CLI directly.');
-        return undefined;
-    }
-
-    async create(
-        scope: CreateEnvironmentScope,
-        options?: CreateEnvironmentOptions,
-    ): Promise<PythonEnvironment | undefined> {
-        traceVerbose(`Called create with scope: ${scope}, options: ${JSON.stringify(options)}`);
-
-        window.showErrorMessage(
-            'The Pixi extension does not support creating environments. Please use the CLI directly.',
-        );
-        return undefined;
-    }
-
-    async remove(environment: PythonEnvironment): Promise<void> {
-        traceVerbose(`Called remove with environment: ${JSON.stringify(environment)}`);
-
-        window.showErrorMessage(
-            'The Pixi extension does not support removing environments. Please use the CLI directly.',
-        );
     }
 
     async refresh(scope: RefreshEnvironmentsScope) {
