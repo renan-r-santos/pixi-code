@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - Check if project path exists before running Pixi commands
+- Check minimum Pixi version on activation
 
 ## [0.1.3] - 2024-08-24
 
