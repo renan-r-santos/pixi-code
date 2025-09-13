@@ -1,3 +1,4 @@
+import semver from 'semver';
 import { ExtensionContext, window } from 'vscode';
 
 import { registerLogger, traceInfo } from './common/logging';
@@ -6,6 +7,8 @@ import { PixiEnvManager } from './pixi/envManager';
 import { PixiPackageManager } from './pixi/projectManager';
 import { getPixi, runPixi } from './pixi/utils';
 import { getEnvExtApi } from './pythonEnvsApi';
+
+const MINIMUM_PIXI_VERSION = '0.53.0';
 
 export interface IDisposable {
     dispose(): void | undefined | Promise<void>;
@@ -24,6 +27,18 @@ export async function activate(context: ExtensionContext) {
     const versionMatch = stdout.trim().match(/^pixi (\d+\.\d+\.\d+)/);
     if (!versionMatch) {
         const errorMsg = `Found invalid Pixi binary at ${getPixi()}.`;
+        window.showErrorMessage(errorMsg);
+        throw new Error(errorMsg);
+    }
+
+    const currentVersion = versionMatch[1];
+
+    // Check if the current version meets the minimum requirement using semver
+    if (!semver.gte(currentVersion, MINIMUM_PIXI_VERSION)) {
+        const errorMsg =
+            `Pixi version ${currentVersion} is too old. ` +
+            `This extension requires Pixi version ${MINIMUM_PIXI_VERSION} or newer. ` +
+            `Please update Pixi by running: pixi self-update`;
         window.showErrorMessage(errorMsg);
         throw new Error(errorMsg);
     }
