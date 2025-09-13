@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Check if project path exists before running Pixi commands
 - Check minimum Pixi version on activation
+- Remove unsupported actions (create, quick create and remove) for better UX
 
 ## [0.1.3] - 2024-08-24
 
