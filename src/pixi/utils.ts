@@ -1,5 +1,6 @@
 import * as ch from 'child_process';
 import * as fs from 'fs';
+import * as path from 'path';
 import { CancellationError, CancellationToken, Uri, window, workspace } from 'vscode';
 import which from 'which';
 
@@ -14,6 +15,8 @@ import { PixiEnvironment, PixiInfo, PixiPackage } from './types';
 
 export const PIXI_WORKSPACE_KEY = `${EXTENSION_ID}:pixi:WORKSPACE_SELECTED`;
 export const PIXI_GLOBAL_KEY = `${EXTENSION_ID}:pixi:GLOBAL_SELECTED`;
+export const DEFAULT_SEARCH_PATH_MAX_DEPTH = 2;
+const DEFAULT_IGNORED_DIRECTORY_NAMES = new Set(['.git', '.hg', '.svn', '.pixi', 'node_modules']);
 
 export async function findPixi(): Promise<string | undefined> {
     try {
@@ -86,10 +89,123 @@ export async function runPixi(args: string[], options?: ch.SpawnOptions, token?:
     return await _runPixi(pixi, args, options, token);
 }
 
+export function isPixiProjectDir(projectPath: string): boolean {
+    if (!fs.existsSync(projectPath)) {
+        return false;
+    }
+
+    const pixiTomlPath = path.join(projectPath, 'pixi.toml');
+    if (fs.existsSync(pixiTomlPath)) {
+        return true;
+    }
+
+    const pyprojectPath = path.join(projectPath, 'pyproject.toml');
+    if (fs.existsSync(pyprojectPath)) {
+        try {
+            const content = fs.readFileSync(pyprojectPath, 'utf-8');
+            return /^\[tool\.pixi(\.|])/m.test(content);
+        } catch (error) {
+            traceVerbose(`Error reading pyproject.toml at ${pyprojectPath}: ${error}`);
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Discover Pixi projects under the provided root directory up to the specified depth.
+ */
+async function discoverPixiProjectsUnderPath(
+    rootPath: string,
+    maxDepth: number,
+    ignoredDirectories: Set<string>,
+): Promise<string[]> {
+    const results: string[] = [];
+
+    let stat;
+    try {
+        stat = await fs.promises.stat(rootPath);
+        if (!stat.isDirectory()) {
+            traceVerbose(`Search path is not a directory: ${rootPath}`);
+            return results;
+        }
+    } catch (error) {
+        traceVerbose(`Error accessing search path ${rootPath}: ${error}`);
+        return results;
+    }
+
+    type QueueItem = { path: string; depth: number };
+    const queue: QueueItem[] = [{ path: rootPath, depth: 0 }];
+    const visited = new Set<string>();
+
+    while (queue.length > 0) {
+        const { path: currentPath, depth } = queue.shift()!;
+        if (visited.has(currentPath)) {
+            continue;
+        }
+        visited.add(currentPath);
+
+        if (isPixiProjectDir(currentPath)) {
+            results.push(currentPath);
+        }
+
+        if (depth >= maxDepth) {
+            continue;
+        }
+
+        let entries: fs.Dirent[];
+        try {
+            entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
+        } catch (error) {
+            traceVerbose(`Error reading directory ${currentPath}: ${error}`);
+            continue;
+        }
+
+        for (const entry of entries) {
+            if (!entry.isDirectory() || entry.isSymbolicLink()) {
+                continue;
+            }
+
+            if (ignoredDirectories.has(entry.name)) {
+                continue;
+            }
+
+            const nextPath = path.join(currentPath, entry.name);
+            queue.push({ path: nextPath, depth: depth + 1 });
+        }
+    }
+
+    traceVerbose(`Discovered ${results.length} Pixi projects under ${rootPath} (max depth ${maxDepth})`);
+    return results;
+}
+
+/**
+ * Discover Pixi projects from the provided collection of root search paths.
+ * The result is deduplicated and only includes directories containing a Pixi manifest.
+ */
+export async function discoverPixiProjects(
+    rootPaths: Iterable<string>,
+    maxDepth: number = DEFAULT_SEARCH_PATH_MAX_DEPTH,
+): Promise<string[]> {
+    const discoveredProjects = new Set<string>();
+    for (const rootPath of rootPaths) {
+        const projects = await discoverPixiProjectsUnderPath(rootPath, maxDepth, DEFAULT_IGNORED_DIRECTORY_NAMES);
+        for (const project of projects) {
+            discoveredProjects.add(project);
+        }
+    }
+
+    return Array.from(discoveredProjects);
+}
+
 export async function refreshPixi(project_path: string): Promise<PixiEnvironment[]> {
     try {
         if (!fs.existsSync(project_path)) {
             traceVerbose(`Project path does not exist: ${project_path}`);
+            return [];
+        }
+
+        if (!isPixiProjectDir(project_path)) {
             return [];
         }
 
