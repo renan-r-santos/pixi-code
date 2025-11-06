@@ -45,6 +45,18 @@
                     "default": "pixi",
                     "description": "Path to the Pixi executable. Leave empty to use auto-discovery.",
                     "scope": "machine-overridable"
+                },
+                "pixi-code.noInstall": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Add --no-install flag to pixi run and pixi shell-hook commands to skip installing dependencies.",
+                    "scope": "resource"
+                },
+                "pixi-code.frozen": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Add --frozen flag to pixi run and pixi shell-hook commands to skip re-locking.",
+                    "scope": "resource"
                 }
             }
         },
