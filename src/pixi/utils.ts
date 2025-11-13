@@ -139,8 +139,8 @@ export async function refreshPixi(project_path: string): Promise<PixiEnvironment
                 execInfo: {
                     run: { executable: pythonExecutable },
                     activatedRun: {
-                        executable: pixi,
-                        args: ['run', '--manifest-path', manifestPath, '-e', pixiEnv.name, 'python'],
+                        executable: pythonExecutable,
+                        args: [],
                     },
                     activation: [
                         {
