@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { CancellationError, CancellationToken, Uri, window, workspace } from 'vscode';
 import which from 'which';
 
-import { Package } from '../api';
+import { Package, PythonCommandRunConfiguration } from '../api';
 import { createDeferred } from '../common/deferred';
 import { quoteArgs } from '../common/execUtils';
 import { findPythonExecutable } from '../common/findPython';
@@ -86,6 +86,34 @@ export async function runPixi(args: string[], options?: ch.SpawnOptions, token?:
     return await _runPixi(pixi, args, options, token);
 }
 
+function createShellActivationCommands(
+    pixi: string,
+    manifestPath: string,
+    envName: string,
+    additionalFlags: string[],
+): Map<string, PythonCommandRunConfiguration[]> {
+    const shellActivation = new Map<string, PythonCommandRunConfiguration[]>();
+    const additionalFlagsStr = additionalFlags.join(' ');
+    const shellHookCmd = `${pixi} shell-hook --manifest-path ${manifestPath} -e ${envName} ${additionalFlagsStr}`;
+
+    // POSIX-like shells (bash, zsh, sh, ksh)
+    const posixShells = ['bash', 'zsh', 'sh', 'ksh', 'gitbash', 'wsl', 'unknown'];
+    for (const shell of posixShells) {
+        shellActivation.set(shell, [{ executable: 'eval', args: [`"$(${shellHookCmd})"`] }]);
+    }
+
+    // Fish shell
+    shellActivation.set('fish', [{ executable: 'eval', args: [`(${shellHookCmd})`] }]);
+
+    // PowerShell
+    shellActivation.set('pwsh', [{ executable: 'Invoke-Expression', args: [`(& ${shellHookCmd})`] }]);
+
+    // Windows CMD - call pixi shell-hook directly and execute the output
+    shellActivation.set('cmd', [{ executable: shellHookCmd }]);
+
+    return shellActivation;
+}
+
 export async function refreshPixi(project_path: string): Promise<PixiEnvironment[]> {
     try {
         if (!fs.existsSync(project_path)) {
@@ -107,6 +135,20 @@ export async function refreshPixi(project_path: string): Promise<PixiEnvironment
         const projectName = pixiInfo.project_info.name;
         const manifestPath = pixiInfo.project_info.manifest_path;
 
+        // Read configuration options for --no-install and --frozen flags
+        const config = workspace.getConfiguration('pixi-code');
+        const noInstall = config.get<boolean>('noInstall', false);
+        const frozen = config.get<boolean>('frozen', false);
+
+        // Build additional flags for run and shell commands
+        const additionalFlags: string[] = [];
+        if (noInstall) {
+            additionalFlags.push('--no-install');
+        }
+        if (frozen) {
+            additionalFlags.push('--frozen');
+        }
+
         for (const pixiEnv of pixiInfo.environments_info) {
             const stdout = await runPixi(
                 ['list', '--no-install', '--frozen', '--json', '--environment', pixiEnv.name],
@@ -125,8 +167,15 @@ export async function refreshPixi(project_path: string): Promise<PixiEnvironment
             // If the environment is not installed, do not skip it.
             // Both `pixi info` and `pixi list` work fine with an environment that is not installed, and we want to take
             // advantage of that. Besides, `pythonExecutable` isn't really used, since we provide both `activatedRun`
-            // and `activation` commands.
+            // and shell activation commands.
             const pythonExecutable = (await findPythonExecutable(pixiEnv.prefix)) || '';
+
+            const shellActivation = createShellActivationCommands(
+                pixi,
+                manifestPath,
+                pixiEnv.name,
+                additionalFlags,
+            );
 
             const env: PixiEnvironment = {
                 name: pixiEnv.name,
@@ -142,12 +191,7 @@ export async function refreshPixi(project_path: string): Promise<PixiEnvironment
                         executable: pythonExecutable,
                         args: [],
                     },
-                    activation: [
-                        {
-                            executable: pixi,
-                            args: ['shell', '--manifest-path', manifestPath, '-e', pixiEnv.name],
-                        },
-                    ],
+                    shellActivation,
                     deactivation: [
                         {
                             executable: 'exit',
