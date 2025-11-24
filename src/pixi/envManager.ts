@@ -19,10 +19,12 @@ import {
 import { getDefaultInterpreterPath } from '../common/defaultInterpreter';
 import { createDeferred, Deferred } from '../common/deferred';
 import { traceVerbose } from '../common/logging';
+import { getAllExtraSearchPaths } from '../common/search_paths';
 import { EXTENSION_ID } from '../common/utils';
 import { PixiEnvironment } from './types';
 import {
     clearExtensionCache,
+    discoverPixiProjects,
     getGlobalEnvId,
     getProjectEnvId,
     refreshPixi,
@@ -181,6 +183,24 @@ export class PixiEnvManager implements EnvironmentManager {
         await clearExtensionCache();
     }
 
+    /**
+     * Get all Pixi projects from configured search paths (global and workspace).
+     * Performs a shallow directory traversal (depth-limited) to discover Pixi manifests.
+     * Returns a deduplicated array of project paths.
+     */
+    private async getSearchPathProjects(): Promise<string[]> {
+        const extraSearchPaths = await getAllExtraSearchPaths();
+        if (extraSearchPaths.length === 0) {
+            traceVerbose('No configured search paths for Pixi discovery');
+            return [];
+        }
+
+        const uniqueSearchPaths = Array.from(new Set(extraSearchPaths));
+        const result = await discoverPixiProjects(uniqueSearchPaths);
+        traceVerbose(`Found ${result.length} Pixi projects from configured search paths`);
+        return result;
+    }
+
     private async refreshAll(): Promise<void> {
         await window.withProgress(
             {
@@ -195,6 +215,35 @@ export class PixiEnvManager implements EnvironmentManager {
                 this.projectToEnvs.clear();
 
                 const projects = this.api.getPythonProjects();
+
+                // Add search path projects
+                const searchPathProjects = await this.getSearchPathProjects();
+                const workspaceProjectPaths = new Set(projects.map((project) => project.uri.fsPath));
+
+                for (const searchPath of searchPathProjects) {
+                    if (workspaceProjectPaths.has(searchPath)) {
+                        traceVerbose(
+                            `Skipping search path ${searchPath} because it corresponds to an existing workspace project`,
+                        );
+                        continue;
+                    }
+
+                    const newEnvs = await refreshPixi(searchPath);
+
+                    const oldEnvs = oldProjectToEnvs.get(searchPath) || [];
+                    const oldEnvIds = new Set(oldEnvs.map((env) => env.envId.id));
+                    const newEnvIds = new Set(newEnvs.map((env) => env.envId.id));
+
+                    oldEnvs
+                        .filter((env) => !newEnvIds.has(env.envId.id))
+                        .forEach((env) => remove.push({ environment: env, kind: EnvironmentChangeKind.remove }));
+
+                    newEnvs
+                        .filter((env) => !oldEnvIds.has(env.envId.id))
+                        .forEach((env) => add.push({ environment: env, kind: EnvironmentChangeKind.add }));
+
+                    this.projectToEnvs.set(searchPath, newEnvs);
+                }
 
                 for (const project of projects) {
                     const projectPath = project.uri.fsPath;
@@ -217,6 +266,14 @@ export class PixiEnvManager implements EnvironmentManager {
                         .forEach((env) => add.push({ environment: env, kind: EnvironmentChangeKind.add }));
 
                     this.projectToEnvs.set(projectPath, newEnvs);
+                }
+
+                for (const [projectPath, oldEnvs] of oldProjectToEnvs) {
+                    if (this.projectToEnvs.has(projectPath)) {
+                        continue;
+                    }
+                    // The project disappeared from discovery (e.g. search path removed), so signal removals for its envs.
+                    oldEnvs.forEach((env) => remove.push({ environment: env, kind: EnvironmentChangeKind.remove }));
                 }
 
                 this._onDidChangeEnvironments.fire([...remove, ...add]);
