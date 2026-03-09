@@ -71,6 +71,7 @@
         "format:check": "prettier --check ."
     },
     "devDependencies": {
+        "@types/fs-extra": "^11.0.4",
         "@types/node": "24.x",
         "@types/vscode": "^1.109.0",
         "@types/which": "^3.0.4",
@@ -87,6 +88,7 @@
     },
     "dependencies": {
         "@types/semver": "^7.7.1",
+        "fs-extra": "^11.3.4",
         "semver": "^7.7.4",
         "which": "^6.0.1"
     }
