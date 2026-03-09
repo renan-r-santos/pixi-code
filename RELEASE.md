@@ -1,6 +1,12 @@
 # Release Process
 
-## Steps to Release
+## Pre-release
+
+Every push to `main` automatically publishes a pre-release version to both the VS Code
+Marketplace and OpenVSX. Users who opt-in to pre-release versions in their editor will
+receive these updates automatically.
+
+## Stable Release
 
 1. **Create a PR updating package.json version and package-lock.json**
 

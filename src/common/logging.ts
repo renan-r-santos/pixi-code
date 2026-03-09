@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 import * as util from 'util';
 import { Disposable, LogOutputChannel } from 'vscode';
 
@@ -27,7 +30,6 @@ class OutputChannelLogger {
 }
 
 let channel: OutputChannelLogger | undefined;
-
 export function registerLogger(logChannel: LogOutputChannel): Disposable {
     channel = new OutputChannelLogger(logChannel);
     return {

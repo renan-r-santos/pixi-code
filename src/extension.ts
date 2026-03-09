@@ -1,7 +1,7 @@
 import semver from 'semver';
 import { ExtensionContext, window } from 'vscode';
 
-import { registerLogger, traceInfo } from './common/logging';
+import { registerLogger } from './common/logging';
 import { setPersistentState } from './common/persistentState';
 import { PixiEnvManager } from './pixi/envManager';
 import { PixiPackageManager } from './pixi/projectManager';
@@ -10,23 +10,17 @@ import { getEnvExtApi } from './pythonEnvsApi';
 
 const MINIMUM_PIXI_VERSION = '0.53.0';
 
-export interface IDisposable {
-    dispose(): void | undefined | Promise<void>;
-}
-
 export async function activate(context: ExtensionContext) {
     const api = await getEnvExtApi();
 
-    const log = window.createOutputChannel('Pixi Environment Manager', {
-        log: true,
-    });
+    const log = window.createOutputChannel('Pixi Environment Manager', { log: true });
     context.subscriptions.push(log, registerLogger(log));
 
     // Validate Pixi installation
     const stdout = await runPixi(['--version']);
     const versionMatch = stdout.trim().match(/^pixi (\d+\.\d+\.\d+)/);
     if (!versionMatch) {
-        const errorMsg = `Found invalid Pixi binary at ${getPixi()}.`;
+        const errorMsg = `Found invalid Pixi binary at ${await getPixi()}.`;
         window.showErrorMessage(errorMsg);
         throw new Error(errorMsg);
     }
@@ -51,23 +45,4 @@ export async function activate(context: ExtensionContext) {
 
     const packageManager = new PixiPackageManager(api, log);
     context.subscriptions.push(api.registerPackageManager(packageManager));
-}
-
-export async function disposeAll(disposables: IDisposable[]): Promise<void> {
-    await Promise.all(
-        disposables.map(async (d) => {
-            try {
-                return Promise.resolve(d.dispose());
-            } catch {
-                // do nothing
-            }
-            return Promise.resolve();
-        }),
-    );
-}
-
-export async function deactivate(context: ExtensionContext) {
-    await disposeAll(context.subscriptions);
-    context.subscriptions.length = 0; // Clear subscriptions to prevent memory leaks
-    traceInfo('Pixi Environment Manager extension deactivated.');
 }

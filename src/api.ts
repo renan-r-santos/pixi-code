@@ -4,6 +4,7 @@
 import {
     Disposable,
     Event,
+    extensions,
     FileChangeType,
     LogOutputChannel,
     MarkdownString,
@@ -13,6 +14,11 @@ import {
     ThemeIcon,
     Uri,
 } from 'vscode';
+
+/*
+ * Do not introduce any breaking changes to this API.
+ * This is the public API for other extensions to interact with the Python Environments extension.
+ */
 
 /**
  * The path to an icon, or a theme-specific configuration of icons.
@@ -217,6 +223,13 @@ export interface PythonEnvironmentInfo {
      * Optional `group` for this environment. This is used to group environments in the Environment Manager UI.
      */
     readonly group?: string | EnvironmentGroupInfo;
+
+    /**
+     * Error message if the environment is broken or invalid.
+     * When set, indicates this environment has issues (e.g., broken symlinks, missing Python executable).
+     * The UI should display a warning indicator and show this message to help users diagnose and fix the issue.
+     */
+    readonly error?: string;
 }
 
 /**
@@ -379,7 +392,7 @@ export interface EnvironmentManager {
     quickCreateConfig?(): QuickCreateConfig | undefined;
 
     /**
-     * Creates a new Python environment within the specified scope. Create should support adding a .gitignore file if it creates a folder within the workspace.
+     * Creates a new Python environment within the specified scope. Create should support adding a .gitignore file if it creates a folder within the workspace. If a manager does not support environment creation, do not implement this method; the UI disables "create" options when `this.manager.create === undefined`.
      * @param scope - The scope within which to create the environment.
      * @param options - Optional parameters for creating the Python environment.
      * @returns A promise that resolves to the created Python environment, or undefined if creation failed.
@@ -922,7 +935,8 @@ export interface PythonProjectEnvironmentApi {
 }
 
 export interface PythonEnvironmentManagerApi
-    extends PythonEnvironmentManagerRegistrationApi,
+    extends
+        PythonEnvironmentManagerRegistrationApi,
         PythonEnvironmentItemApi,
         PythonEnvironmentManagementApi,
         PythonEnvironmentsApi,
@@ -987,7 +1001,8 @@ export interface PythonPackageManagementApi {
 }
 
 export interface PythonPackageManagerApi
-    extends PythonPackageManagerRegistrationApi,
+    extends
+        PythonPackageManagerRegistrationApi,
         PythonPackageGetterApi,
         PythonPackageManagementApi,
         PythonPackageItemApi {}
@@ -1206,10 +1221,7 @@ export interface PythonBackgroundRunApi {
 }
 
 export interface PythonExecutionApi
-    extends PythonTerminalCreateApi,
-        PythonTerminalRunApi,
-        PythonTaskRunApi,
-        PythonBackgroundRunApi {}
+    extends PythonTerminalCreateApi, PythonTerminalRunApi, PythonTaskRunApi, PythonBackgroundRunApi {}
 
 /**
  * Event arguments for when the monitored `.env` files or any other sources change.
@@ -1223,7 +1235,7 @@ export interface DidChangeEnvironmentVariablesEventArgs {
     /**
      * The type of change that occurred.
      */
-    changeTye: FileChangeType;
+    changeType: FileChangeType;
 }
 
 export interface PythonEnvironmentVariablesApi {
@@ -1237,12 +1249,13 @@ export interface PythonEnvironmentVariablesApi {
      * 3. `.env` file at the root of the python project.
      * 4. `overrides` in the order provided.
      *
-     * @param uri The URI of the project, workspace or a file in a for which environment variables are required.
+     * @param uri The URI of the project, workspace or a file in a for which environment variables are required.If not provided,
+     * it fetches the environment variables for the global scope.
      * @param overrides Additional environment variables to override the defaults.
      * @param baseEnvVar The base environment variables that should be used as a starting point.
      */
     getEnvironmentVariables(
-        uri: Uri,
+        uri: Uri | undefined,
         overrides?: ({ [key: string]: string | undefined } | Uri)[],
         baseEnvVar?: { [key: string]: string | undefined },
     ): Promise<{ [key: string]: string | undefined }>;
@@ -1257,8 +1270,28 @@ export interface PythonEnvironmentVariablesApi {
  * The API for interacting with Python environments, package managers, and projects.
  */
 export interface PythonEnvironmentApi
-    extends PythonEnvironmentManagerApi,
+    extends
+        PythonEnvironmentManagerApi,
         PythonPackageManagerApi,
         PythonProjectApi,
         PythonExecutionApi,
         PythonEnvironmentVariablesApi {}
+
+export const EXTENSION_ID = 'ms-python.vscode-python-envs';
+
+export namespace PythonEnvironments {
+    /**
+     * Returns the API exposed by the Python Environments extension in VS Code.
+     */
+    export async function api(): Promise<PythonEnvironmentApi> {
+        const extension = extensions.getExtension(EXTENSION_ID);
+        if (extension === undefined) {
+            throw new Error(`Python Environments extension is not installed or is disabled`);
+        }
+        if (!extension.isActive) {
+            await extension.activate();
+        }
+        const pythonEnvsApi: PythonEnvironmentApi = extension.exports;
+        return pythonEnvsApi;
+    }
+}

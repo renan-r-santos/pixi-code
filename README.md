@@ -22,7 +22,6 @@ conda, venv, and other Python environments in VS Code.
 
 - Automatic discovery of Python environments created with Pixi
 - Automatic interpreter selection when running and debugging Python code
-- Respect `defaultInterpreterPath` if no Pixi environment was manually selected
 - Support for Pixi features (dev, test, lint, etc.) as separate selectable environments
 - Terminal activation
 - Persistent environment selection per project
@@ -44,7 +43,7 @@ The extension will automatically discover Pixi environments and register them wi
 
 ## Extension Settings
 
-- `pixi-code.pixiExecutable`: Path to the Pixi executable (default: pixi). If empty, autodiscovery will be used.
+- `pixi-code.pixiExecutable`: Path to the Pixi executable. Leave empty to use auto-discovery (default).
 
 ## Limitations
 

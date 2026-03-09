@@ -21,8 +21,8 @@ import {
     PythonEnvironmentApi,
 } from '../api';
 import { traceVerbose } from '../common/logging';
-import { PixiEnvironment, PixiPackage } from './types';
-import { pixiPkgsToPackages, runPixi } from './utils';
+import { PixiEnvironment } from './types';
+import { listPixiPackages, pixiPkgsToPackages } from './utils';
 
 export class PixiPackageManager implements PackageManager, Disposable {
     private readonly _onDidChangePackages = new EventEmitter<DidChangePackagesEventArgs>();
@@ -71,16 +71,8 @@ export class PixiPackageManager implements PackageManager, Disposable {
                     return;
                 }
 
-                const manifest_path = environment.pixiInfo.project_info.manifest_path;
-                const project_path = path.dirname(manifest_path);
-
-                const stdout = await runPixi(
-                    ['list', '--no-install', '--frozen', '--json', '--environment', environment.name],
-                    {
-                        cwd: project_path,
-                    },
-                );
-                const pixiPackages: PixiPackage[] = JSON.parse(stdout);
+                const projectPath = path.dirname(environment.pixiInfo.project_info.manifest_path);
+                const pixiPackages = await listPixiPackages(environment.name, projectPath);
 
                 const before = environment.packages;
                 const after = pixiPkgsToPackages(pixiPackages, environment.envId.id);
@@ -101,32 +93,30 @@ export class PixiPackageManager implements PackageManager, Disposable {
         const changes: { kind: PackageChangeKind; pkg: Package }[] = [];
 
         // Find removed packages
-        for (const beforePkg of before) {
-            const found = after.find((p) => p.name === beforePkg.name);
-            if (!found) {
-                changes.push({ kind: PackageChangeKind.remove, pkg: beforePkg });
+        const beforeByName = new Map(before.map((p) => [p.name, p]));
+        const afterByName = new Map(after.map((p) => [p.name, p]));
+
+        for (const pkg of before) {
+            if (!afterByName.has(pkg.name)) {
+                changes.push({ kind: PackageChangeKind.remove, pkg });
             }
         }
 
         // Find added and updated packages
-        for (const afterPkg of after) {
-            const beforePkg = before.find((p) => p.name === afterPkg.name);
-            if (!beforePkg) {
+        for (const pkg of after) {
+            const prev = beforeByName.get(pkg.name);
+            if (!prev) {
                 // Package was added
-                changes.push({ kind: PackageChangeKind.add, pkg: afterPkg });
-            } else if (beforePkg.version !== afterPkg.version) {
+                changes.push({ kind: PackageChangeKind.add, pkg });
+            } else if (prev.version !== pkg.version) {
                 // Package version changed - treat as remove then add
-                changes.push({ kind: PackageChangeKind.remove, pkg: beforePkg });
-                changes.push({ kind: PackageChangeKind.add, pkg: afterPkg });
+                changes.push({ kind: PackageChangeKind.remove, pkg: prev });
+                changes.push({ kind: PackageChangeKind.add, pkg });
             }
         }
 
         if (changes.length > 0) {
-            this._onDidChangePackages.fire({
-                environment,
-                manager: this,
-                changes,
-            });
+            this._onDidChangePackages.fire({ environment, manager: this, changes });
         }
     }
 }

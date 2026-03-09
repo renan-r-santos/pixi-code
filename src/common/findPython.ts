@@ -1,7 +1,6 @@
+import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-
-import { fileExists } from './utils';
 
 export async function findPythonExecutable(envPath: string): Promise<string | null> {
     let candidates;
@@ -25,7 +24,7 @@ export async function findPythonExecutable(envPath: string): Promise<string | nu
     }
 
     for (const candidate of candidates) {
-        if (await fileExists(candidate)) {
+        if (await fs.pathExists(candidate)) {
             return candidate;
         }
     }
