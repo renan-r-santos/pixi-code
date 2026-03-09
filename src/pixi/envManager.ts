@@ -16,6 +16,7 @@ import {
 } from '../api';
 import { createDeferred, Deferred } from '../common/deferred';
 import { traceVerbose } from '../common/logging';
+import { resolvePixiProjectPaths } from '../common/searchPaths';
 import { PIXI_MANAGER_ID } from '../common/utils';
 import { PixiEnvironment } from './types';
 import {
@@ -195,12 +196,17 @@ export class PixiEnvManager implements EnvironmentManager {
                 const oldProjectToEnvs = new Map(this.projectToEnvs);
                 this.projectToEnvs.clear();
 
+                // Collect project paths from registered Python projects and search paths
                 const projects = this.api.getPythonProjects();
+                const projectMap = new Map(projects.map((p) => [p.uri.fsPath, p]));
+
+                const searchPathRoots = await resolvePixiProjectPaths();
+                const projectPaths = new Set([...projectMap.keys(), ...searchPathRoots]);
+
                 const changes: DidChangeEnvironmentsEventArgs = [];
 
                 await Promise.all(
-                    projects.map(async (project) => {
-                        const projectPath = project.uri.fsPath;
+                    [...projectPaths].map(async (projectPath) => {
                         const oldEnvs = oldProjectToEnvs.get(projectPath) || [];
                         const newEnvs = await refreshPixi(projectPath);
 
@@ -223,8 +229,7 @@ export class PixiEnvManager implements EnvironmentManager {
                 const oldActiveEnv = new Map(this.activeEnv);
                 this.activeEnv.clear();
 
-                for (const project of projects) {
-                    const projectPath = project.uri.fsPath;
+                for (const projectPath of projectPaths) {
                     const envId = await getProjectEnvId(projectPath);
                     const env = envId ? envLookup.get(envId) : undefined;
 
@@ -232,7 +237,11 @@ export class PixiEnvManager implements EnvironmentManager {
                         this.activeEnv.set(projectPath, env);
                     }
 
-                    this.triggerDidChangeEnvironment(project.uri, oldActiveEnv.get(projectPath), env);
+                    this.triggerDidChangeEnvironment(
+                        projectMap.get(projectPath)?.uri,
+                        oldActiveEnv.get(projectPath),
+                        env,
+                    );
                 }
             },
         );

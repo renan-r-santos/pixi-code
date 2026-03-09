@@ -37,6 +37,12 @@
     ],
     "main": "./dist/extension.js",
     "contributes": {
+        "configurationDefaults": {
+            "python-envs.workspaceSearchPaths": [
+                "./**/.venv",
+                "./**/.pixi"
+            ]
+        },
         "configuration": {
             "title": "Pixi",
             "properties": {
@@ -88,6 +94,7 @@
     },
     "dependencies": {
         "@types/semver": "^7.7.1",
+        "fast-glob": "^3.3.3",
         "fs-extra": "^11.3.4",
         "semver": "^7.7.4",
         "which": "^6.0.1"
