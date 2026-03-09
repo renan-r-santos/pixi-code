@@ -61,7 +61,7 @@ jobs:
       - name: Set pre-release version
         run: |
           MAJOR_MINOR=$(node -p "require('./package.json').version.split('.').slice(0,2).join('.')")
-          npm version "${MAJOR_MINOR}.$(date -u +'%Y%m%d%H%M')" --no-git-tag-version
+          npm version "${MAJOR_MINOR}.$(date -u +'%Y%m%d').$(date -u +'%H%M')" --no-git-tag-version
 
       - name: Publish Extension (Code Marketplace, pre-release)
         run: npx vsce publish --pre-release --pat ${{ secrets.MARKETPLACE_TOKEN }}
@@ -87,7 +87,7 @@ jobs:
       - name: Set pre-release version
         run: |
           MAJOR_MINOR=$(node -p "require('./package.json').version.split('.').slice(0,2).join('.')")
-          npm version "${MAJOR_MINOR}.$(date -u +'%Y%m%d%H%M')" --no-git-tag-version
+          npm version "${MAJOR_MINOR}.$(date -u +'%Y%m%d').$(date -u +'%H%M')" --no-git-tag-version
 
       - name: Publish Extension (OpenVSX, pre-release)
         run: npx ovsx publish --pre-release --pat ${{ secrets.OPENVSX_TOKEN }}
