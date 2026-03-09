@@ -5,6 +5,12 @@ All notable changes to the "pixi-code" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- Add pre-release pipeline for continuous updates on every push to main
+- Revert 0.1.5 `activatedRun` change now that https://github.com/microsoft/vscode-python-debugger/pull/949 was merged
+- Remove `defaultInterpreterPath` support for setting the active environment
+
 ## [0.1.5] - 2025-09-13
 
 - Fix debugging Pixi projects in the new version of the Python Environments extension by fixing the `activatedRun`
