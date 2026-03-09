@@ -42,7 +42,7 @@
             "properties": {
                 "pixi-code.pixiExecutable": {
                     "type": "string",
-                    "default": "pixi",
+                    "default": "",
                     "description": "Path to the Pixi executable. Leave empty to use auto-discovery.",
                     "scope": "machine-overridable"
                 }

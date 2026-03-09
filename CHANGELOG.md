@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Fix `pixi-code.pixiExecutable` setting not being read
+- Fix subprocess runner race condition between exit and close events
+- Fix fire-and-forget promises in environment selection
+- Remove broken `deactivate` function (VS Code handles cleanup automatically)
+- Extract shared helpers and parallelize environment discovery
 - Add pre-release pipeline for continuous updates on every push to main
 - Revert 0.1.5 `activatedRun` change now that https://github.com/microsoft/vscode-python-debugger/pull/949 was merged
 - Remove `defaultInterpreterPath` support for setting the active environment
