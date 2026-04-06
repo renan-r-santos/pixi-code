@@ -39,8 +39,10 @@
     "contributes": {
         "configurationDefaults": {
             "python-envs.workspaceSearchPaths": [
-                "./**/.venv",
-                "./**/.pixi"
+                ".venv",
+                "*/.venv",
+                ".pixi",
+                "*/.pixi"
             ]
         },
         "configuration": {
