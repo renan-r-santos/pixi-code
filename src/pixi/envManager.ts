@@ -97,7 +97,7 @@ export class PixiEnvManager implements EnvironmentManager {
         await this.initialize();
 
         if (scope === 'all') {
-            return [...this.buildEnvLookup().values()];
+            return [...this.buildEnvLookup().values()].sort((a, b) => a.displayName.localeCompare(b.displayName));
         }
 
         if (scope instanceof Uri) {

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Pre-release]
 
+- Improve environment display names to match uv/venv style (e.g. `project:env (version)`)
+- Sort environments alphabetically by project and environment name
+- Update default `workspaceSearchPaths` to improve environment discovery performance
 - Support `python-envs.workspaceSearchPaths` and `python-envs.globalSearchPaths` for environment discovery
 - Fix `pixi-code.pixiExecutable` setting not being read
 - Fix subprocess runner race condition between exit and close events
