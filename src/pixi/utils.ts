@@ -1,5 +1,5 @@
 import * as ch from 'child_process';
-import { CancellationError, CancellationToken, Uri, window, workspace } from 'vscode';
+import { CancellationError, CancellationToken, ThemeIcon, Uri, window, workspace } from 'vscode';
 import which from 'which';
 
 import { Package } from '../api';
@@ -122,14 +122,19 @@ export async function refreshPixi(projectPath: string): Promise<PixiEnvironment[
 
                 const pythonExecutable = (await findPythonExecutable(pixiEnv.prefix)) || '';
 
+                const qualifiedName = `${projectName}:${pixiEnv.name}`;
+                const sv = pythonPackage.version;
+
                 return {
-                    name: pixiEnv.name,
-                    displayName: pixiEnv.name,
-                    shortDisplayName: pixiEnv.name,
+                    name: `${qualifiedName} (${sv})`,
+                    displayName: `${qualifiedName} (${sv})`,
+                    shortDisplayName: `${sv} (${qualifiedName})`,
                     displayPath: pixiEnv.prefix,
-                    version: pythonPackage.version,
+                    version: sv,
                     environmentPath: Uri.file(pixiEnv.prefix),
-                    description: `Python ${pythonPackage.version}`,
+                    description: 'pixi',
+                    tooltip: pythonExecutable,
+                    iconPath: new ThemeIcon('python'),
                     execInfo: {
                         run: { executable: pythonExecutable },
                         activatedRun: {
@@ -145,7 +150,6 @@ export async function refreshPixi(projectPath: string): Promise<PixiEnvironment[
                         deactivation: [{ executable: 'exit', args: [] }],
                     },
                     sysPrefix: pixiEnv.prefix,
-                    group: projectName,
                     envId: {
                         id: pixiEnv.prefix,
                         managerId: PIXI_MANAGER_ID,
