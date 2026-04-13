@@ -1,6 +1,7 @@
 import { Package, PythonEnvironment } from '../api';
 
 export interface PixiInfo {
+    platform: string;
     project_info?: {
         name: string;
         manifest_path: string;
@@ -8,6 +9,7 @@ export interface PixiInfo {
     environments_info: Array<{
         name: string;
         prefix: string;
+        platforms: string[];
     }>;
 }
 
