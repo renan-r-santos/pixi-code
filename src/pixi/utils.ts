@@ -1,8 +1,8 @@
+import { Package } from '@vscode/python-environments';
 import * as ch from 'child_process';
 import { CancellationError, CancellationToken, ThemeIcon, Uri, window, workspace } from 'vscode';
 import which from 'which';
 
-import { Package } from '../api';
 import { createDeferred } from '../common/deferred';
 import { quoteArgs } from '../common/execUtils';
 import { findPythonExecutable } from '../common/findPython';

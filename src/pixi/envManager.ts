@@ -1,5 +1,3 @@
-import { EventEmitter, LogOutputChannel, MarkdownString, ProgressLocation, ThemeIcon, Uri, window } from 'vscode';
-
 import {
     DidChangeEnvironmentEventArgs,
     DidChangeEnvironmentsEventArgs,
@@ -13,7 +11,9 @@ import {
     RefreshEnvironmentsScope,
     ResolveEnvironmentContext,
     SetEnvironmentScope,
-} from '../api';
+} from '@vscode/python-environments';
+import { EventEmitter, LogOutputChannel, MarkdownString, ProgressLocation, ThemeIcon, Uri, window } from 'vscode';
+
 import { createDeferred, Deferred } from '../common/deferred';
 import { traceVerbose } from '../common/logging';
 import { resolvePixiProjectPaths } from '../common/searchPaths';

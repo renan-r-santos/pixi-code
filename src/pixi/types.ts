@@ -1,4 +1,4 @@
-import { Package, PythonEnvironment } from '../api';
+import { Package, PythonEnvironment } from '@vscode/python-environments';
 
 export interface PixiInfo {
     project_info?: {
