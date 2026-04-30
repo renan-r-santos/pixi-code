@@ -20,7 +20,7 @@
         "conda"
     ],
     "engines": {
-        "vscode": "^1.110.0"
+        "vscode": "^1.118.0"
     },
     "categories": [
         "Data Science",
@@ -81,21 +81,22 @@
     "devDependencies": {
         "@types/fs-extra": "^11.0.4",
         "@types/node": "24.x",
-        "@types/vscode": "^1.109.0",
+        "@types/vscode": "^1.118.0",
         "@types/which": "^3.0.4",
-        "@typescript-eslint/eslint-plugin": "^8.56.1",
-        "@typescript-eslint/parser": "^8.56.1",
-        "eslint": "^10.0.3",
-        "eslint-plugin-simple-import-sort": "^12.1.1",
+        "@typescript-eslint/eslint-plugin": "^8.59.1",
+        "@typescript-eslint/parser": "^8.59.1",
+        "eslint": "^10.2.1",
+        "eslint-plugin-simple-import-sort": "^13.0.0",
         "eslint-plugin-unused-imports": "^4.4.1",
-        "prettier": "^3.8.1",
-        "ts-loader": "^9.5.4",
-        "typescript": "^5.9.3",
-        "webpack": "^5.105.4",
-        "webpack-cli": "^6.0.1"
+        "prettier": "^3.8.3",
+        "ts-loader": "^9.5.7",
+        "typescript": "^6.0.3",
+        "webpack": "^5.106.2",
+        "webpack-cli": "^7.0.2"
     },
     "dependencies": {
         "@types/semver": "^7.7.1",
+        "@vscode/python-environments": "^1.0.0",
         "fast-glob": "^3.3.3",
         "fs-extra": "^11.3.4",
         "semver": "^7.7.4",

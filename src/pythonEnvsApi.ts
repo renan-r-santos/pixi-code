@@ -1,6 +1,5 @@
+import { PythonEnvironmentApi } from '@vscode/python-environments';
 import { extensions, window } from 'vscode';
-
-import { PythonEnvironmentApi } from './api';
 
 let _extApi: PythonEnvironmentApi | undefined;
 

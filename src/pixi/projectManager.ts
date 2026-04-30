@@ -1,3 +1,13 @@
+import {
+    DidChangePackagesEventArgs,
+    IconPath,
+    Package,
+    PackageChangeKind,
+    PackageManagementOptions,
+    PackageManager,
+    PythonEnvironment,
+    PythonEnvironmentApi,
+} from '@vscode/python-environments';
 import * as path from 'path';
 import {
     Disposable,
@@ -10,16 +20,6 @@ import {
     window,
 } from 'vscode';
 
-import {
-    DidChangePackagesEventArgs,
-    IconPath,
-    Package,
-    PackageChangeKind,
-    PackageManagementOptions,
-    PackageManager,
-    PythonEnvironment,
-    PythonEnvironmentApi,
-} from '../api';
 import { traceVerbose } from '../common/logging';
 import { PixiEnvironment } from './types';
 import { listPixiPackages, pixiPkgsToPackages } from './utils';
