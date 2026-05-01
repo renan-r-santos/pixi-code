@@ -112,52 +112,62 @@ export async function refreshPixi(projectPath: string): Promise<PixiEnvironment[
         const manifestPath = pixiInfo.project_info.manifest_path;
 
         const results = await Promise.all(
-            pixiInfo.environments_info.map(async (pixiEnv) => {
-                const pixiPackages = await listPixiPackages(pixiEnv.name, projectPath);
-                const pythonPackage = pixiPackages.find((pkg) => pkg.name === 'python');
+            pixiInfo.environments_info
+                .filter((pixiEnv) => {
+                    if (!pixiEnv.platforms.includes(pixiInfo.platform)) {
+                        traceInfo(
+                            `Skipping Pixi environment '${pixiEnv.name}': does not support current platform '${pixiInfo.platform}'.`,
+                        );
+                        return false;
+                    }
+                    return true;
+                })
+                .map(async (pixiEnv) => {
+                    const pixiPackages = await listPixiPackages(pixiEnv.name, projectPath);
+                    const pythonPackage = pixiPackages.find((pkg) => pkg.name === 'python');
 
-                if (!pythonPackage) {
-                    return null;
-                }
+                    if (!pythonPackage) {
+                        return null;
+                    }
 
-                const pythonExecutable = (await findPythonExecutable(pixiEnv.prefix)) || '';
+                    const pythonExecutable = (await findPythonExecutable(pixiEnv.prefix)) || '';
 
-                const qualifiedName = `${projectName}:${pixiEnv.name}`;
-                const sv = pythonPackage.version;
+                    const qualifiedName = `${projectName}:${pixiEnv.name}`;
+                    const sv = pythonPackage.version;
 
-                return {
-                    name: `${qualifiedName} (${sv})`,
-                    displayName: `${qualifiedName} (${sv})`,
-                    shortDisplayName: `${sv} (${qualifiedName})`,
-                    displayPath: pixiEnv.prefix,
-                    version: sv,
-                    environmentPath: Uri.file(pixiEnv.prefix),
-                    description: 'pixi',
-                    tooltip: pythonExecutable,
-                    iconPath: new ThemeIcon('python'),
-                    execInfo: {
-                        run: { executable: pythonExecutable },
-                        activatedRun: {
-                            executable: pixi,
-                            args: ['run', '--manifest-path', manifestPath, '-e', pixiEnv.name, 'python'],
-                        },
-                        activation: [
-                            {
+                    return {
+                        name: `${qualifiedName} (${sv})`,
+                        displayName: `${qualifiedName} (${sv})`,
+                        shortDisplayName: `${sv} (${qualifiedName})`,
+                        displayPath: pixiEnv.prefix,
+                        version: sv,
+                        environmentPath: Uri.file(pixiEnv.prefix),
+                        description: 'pixi',
+                        tooltip: pythonExecutable,
+                        iconPath: new ThemeIcon('python'),
+                        execInfo: {
+                            run: { executable: pythonExecutable },
+                            activatedRun: {
                                 executable: pixi,
-                                args: ['shell', '--manifest-path', manifestPath, '-e', pixiEnv.name],
+                                args: ['run', '--manifest-path', manifestPath, '-e', pixiEnv.name, 'python'],
                             },
-                        ],
-                        deactivation: [{ executable: 'exit', args: [] }],
-                    },
-                    sysPrefix: pixiEnv.prefix,
-                    envId: {
-                        id: pixiEnv.prefix,
-                        managerId: PIXI_MANAGER_ID,
-                    },
-                    pixiInfo,
-                    packages: pixiPkgsToPackages(pixiPackages, pixiEnv.prefix),
-                } as PixiEnvironment;
-            }),
+                            activation: [
+                                {
+                                    executable: pixi,
+                                    args: ['shell', '--manifest-path', manifestPath, '-e', pixiEnv.name],
+                                },
+                            ],
+                            deactivation: [{ executable: 'exit', args: [] }],
+                        },
+                        sysPrefix: pixiEnv.prefix,
+                        envId: {
+                            id: pixiEnv.prefix,
+                            managerId: PIXI_MANAGER_ID,
+                        },
+                        pixiInfo,
+                        packages: pixiPkgsToPackages(pixiPackages, pixiEnv.prefix),
+                    } as PixiEnvironment;
+                }),
         );
 
         return results.filter((env): env is PixiEnvironment => env !== null);
